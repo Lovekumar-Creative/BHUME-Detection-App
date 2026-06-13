@@ -1,0 +1,7 @@
+Pillow
+numpy
+rasterio
+pyproj
+shapely
+geopandas
+scipy
