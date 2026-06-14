@@ -18,6 +18,7 @@ See `quickstart.py` for the same flow, narrated end to end.
 from bhume.geo import Patch, lonlat_to_pixel, patch_for_plot, pixel_to_lonlat
 from bhume.io import Village, load, write_predictions
 from bhume.score import Scorecard, score
+from bhume.solution import build_predictions
 
 __all__ = [
     'Village',
@@ -29,4 +30,5 @@ __all__ = [
     'pixel_to_lonlat',
     'Scorecard',
     'score',
+    'build_predictions',
 ]

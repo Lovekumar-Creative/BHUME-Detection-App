@@ -1,4 +1,8 @@
-"""Automatic plot alignment using satellite edges and rough boundary hints."""
+"""Automatic plot alignment using satellite edges and rough boundary hints.
+
+This module contains the reusable prediction method. Run the root-level
+``solution.py`` script to load a village, generate output, and print a score.
+"""
 
 from __future__ import annotations
 

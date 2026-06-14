@@ -56,18 +56,6 @@ Optional search controls:
 python main.py data/34855_vadnerbhairav_chandavad_nashik --radius 18 --step 3
 ```
 
-## Visualize
-
-```bash
-python visualize_village.py
-```
-
-This creates `village_overview.png`:
-
-- Red: official boundary
-- Green: corrected boundary
-- Yellow: flagged boundary
-
 ## Public Check
 
 For the six Nashik examples, the current output reports:
@@ -93,8 +81,7 @@ calibration and restraint.
 
 ## Key Files
 
-- `solution.py`: imagery-led alignment, confidence, and flagging.
-- `main.py`: command-line entry point and output generation.
-- `visualize_village.py`: whole-village overlay image.
+- `bhume/solution.py`: reusable imagery-led alignment, confidence, and flagging logic.
+- `main.py`: complete submission entry point, analogous to `quickstart.py`.
 - `bhume/`: starter-kit loading, geospatial helpers, writer, and scorer.
 - `CONTRACT.md`: exact input/output schema supplied with the assignment.
