@@ -265,15 +265,3 @@ AI tools were used throughout this take-home — both to understand the problem 
 assignment write-up, glossary, and scoring rubric) and to develop and refine the alignment
 method in `bhume/solution.py`. Full transcripts are included under `/transcripts`
 (see `transcripts/README.md` for any web-chat share links).
-
-The full submission consists of:
-
-| Item | Where |
-|---|---|
-| Code | This repository (`bhume/`, `main.py`, `quickstart.py`) |
-| `predictions.geojson` per village attempted | `data/<village>/predictions.geojson` |
-| AI chat transcripts | `/transcripts` (web-chat links listed in `transcripts/README.md`) |
-| 5-minute walkthrough video | Linked in the submission form (Loom / unlisted upload / Drive) |
-
-Submitted via a single GitHub repo URL + a short Google form (name, email, phone, repo URL,
-video link, résumé).
