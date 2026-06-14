@@ -176,29 +176,8 @@ For each village attempted, `predictions.geojson` is written to
 | `method_note` | optional | Brief explanation of the shift or the flag reason |
 | `geometry` | always | New boundary if corrected, original if flagged |
 
-## 7. How This Is Scored
 
-Submissions are ranked on four tiers, each building on the last:
-
-| Tier | In a phrase | What it takes |
-|---|---|---|
-| Bronze | It runs | Reads a village, makes an honest correct-or-flag call per plot, writes a valid file, no overclaiming |
-| Silver | It works | Corrected plots land closer to the truth than the official position did |
-| Gold | It's trustworthy | Confidence tracks reality — the fixes marked most confident really are the best ones |
-| Platinum | It generalises | One method, no hand-tuning, holds up across villages |
-
-Against the hidden, hand-checked truths, three things are measured:
-
-| Measure | What it checks |
-|---|---|
-| Accuracy | IoU and centroid distance vs. the official start; IoU ≥ 0.5 counts as a solid hit |
-| Confidence calibration ★ | AUC — whether high-confidence fixes are really the accurate ones. Watched most closely |
-| Restraint | Flagging when unsure is rewarded; moving an already-correct plot counts against you |
-
-The tiers and numbers only rank submissions — the reasoning shown in the approach above, the
-video, and the AI transcripts is what's actually being evaluated.
-
-## 8. Running It
+## 7. Running It
 
 ```bash
 uv sync
@@ -215,7 +194,7 @@ uv run main.py data/<village> --radius 18 --step 3
 `--radius` is the local search radius (metres) around the village prior shift; `--step` is the
 translation grid step (metres).
 
-## 9. Self-Scoring & Limitations
+## 8. Self-Scoring & Limitations
 
 `score()` reports median IoU (predicted vs. official, vs. the example truths), median centroid
 error, the fraction of corrected plots that improved, and calibration (Spearman correlation and
@@ -236,7 +215,7 @@ Known limitations / honest caveats:
 - The same single method (no per-village hand-tuning) is applied to both villages, in line with
   the "generalises" criterion in the rubric.
 
-## 10. Repository Structure
+## 9. Repository Structure
 
 ```
 .
@@ -259,7 +238,7 @@ Known limitations / honest caveats:
 └── transcripts/            # AI chat transcripts used during this take-home
 ```
 
-## 11. AI Usage & Submission Contents
+## 10. AI Usage & Submission Contents
 
 AI tools were used throughout this take-home — both to understand the problem (reviewing the
 assignment write-up, glossary, and scoring rubric) and to develop and refine the alignment
