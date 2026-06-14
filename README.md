@@ -1,4 +1,4 @@
-# BhuMe Boundary Alignment — Take-Home Submission
+# BhuMe Boundary Alignment
 
 This repository contains my solution to the BhuMe engineering take-home: for each cadastral
 plot in a village, decide whether the official (georeferenced) boundary can be nudged onto the
@@ -28,7 +28,23 @@ The two error types worth distinguishing:
 A quick signal: `drawn area ÷ recorded area` near 1.0 suggests a placement problem; far from
 1.0 suggests an area/record problem.
 
-## 2. Data
+## 2. Tech Stack
+
+| Tool / Library | Used for |
+|---|---|
+| Python 3.12 | Core implementation language |
+| uv | Dependency management and environment setup (`uv sync`, `uv run`) |
+| geopandas | Tabular handling of plot geometries (read/write GeoJSON, CRS reprojection) |
+| shapely | Geometry operations — translation, validity checks, boundary point sampling |
+| rasterio | Reading GeoTIFF imagery and boundary-hint rasters, windowed reads, `WarpedVRT` reprojection |
+| pyproj | Coordinate transforms between EPSG:4326 (lon/lat) and EPSG:3857 (imagery) |
+| numpy | Array/grid maths — distance maps, candidate-offset scoring |
+| scipy | `sobel` edge detection, `distance_transform_edt`, `spearmanr` for calibration scoring |
+| pillow (PIL) | Saving the example image patch in `quickstart.py` |
+| GeoJSON / GeoTIFF | Input plot outlines + output predictions (GeoJSON); satellite imagery + boundary hints (GeoTIFF) |
+| EPSG:4326 / EPSG:3857 | Coordinate systems for plots/output (lon, lat) and imagery (web-mercator metres) respectively |
+
+## 3. Data
 
 Each village bundle contains:
 
@@ -46,7 +62,7 @@ Villages used:
 | Vadnerbhairav | Nashik | 2,457 | 54.2 km² | 7,753 m² | ~1.2 m/px |
 | Malatavadi | Kolhapur | 2,508 | 5.8 km² | 872 m² | ~0.6 m/px |
 
-## 3. Starter Kit (`bhume/`)
+## 4. Starter Kit (`bhume/`)
 
 The provided package handles all the geospatial plumbing so effort goes into the alignment
 logic itself:
@@ -63,12 +79,12 @@ logic itself:
   coherent per-village offset) but misses anything that drifted differently (rotation, local
   stretch, outliers) — that gap is the floor this solution tries to beat.
 
-## 4. My Approach (`bhume/solution.py`)
+## 5. My Approach (`bhume/solution.py`)
 
 `build_predictions(village)` aligns every plot independently using the satellite imagery as the
 primary signal and the rough boundary hints as a secondary nudge.
 
-### 4.1 Edge evidence
+### 5.1 Edge evidence
 
 For both the imagery and the boundary-hint raster, a **distance-to-edge map** is built:
 
@@ -78,7 +94,7 @@ For both the imagery and the boundary-hint raster, a **distance-to-edge map** is
 3. For each layer, compute a Euclidean distance transform so every pixel knows how far it is
    (in metres) from the nearest detected edge.
 
-### 4.2 Village-level prior shift
+### 5.2 Village-level prior shift
 
 Before touching individual plots, a coarse **village-wide shift** is estimated: a sample of
 ~240 plots has its boundary points tested against a grid of candidate translations
@@ -87,7 +103,7 @@ distance maps. The offset that scores best on average becomes the prior — this
 "single coherent drift" that the median-shift baseline also exploits, but derived purely from
 raster evidence (never from the example truths).
 
-### 4.3 Per-plot local search
+### 5.3 Per-plot local search
 
 For each plot:
 
@@ -106,7 +122,7 @@ For each plot:
      placement-vs-area signal from the problem write-up: plots whose shape disagrees with the
      record are penalised even if the imagery search finds *some* offset.
 
-### 4.4 Correct vs. flag decision
+### 5.4 Correct vs. flag decision
 
 A plot is **corrected** only if all of:
 
@@ -119,7 +135,7 @@ A plot is **corrected** only if all of:
 Otherwise the plot is **flagged** and the original geometry is kept unchanged — including plots
 with too few boundary points to evaluate at all.
 
-### 4.5 Confidence
+### 5.5 Confidence
 
 For corrected plots, confidence is a weighted, clipped combination of:
 
@@ -141,13 +157,13 @@ consistent with the shape. Flagged plots get confidence `0.0`. This is what the 
 metric (Spearman / AUC of confidence vs. IoU) checks — a flat or random confidence scores ~0.5
 (useless); the goal is for high-confidence corrections to actually be the most accurate ones.
 
-### 4.6 `method_note`
+### 5.6 `method_note`
 
 Every prediction carries a short note recording either the applied shift and the imagery/hint
 support that justified it, or the reason a plot was flagged (too few points, or
 weak/ambiguous/area-inconsistent evidence).
 
-## 5. Output
+## 6. Output
 
 For each village attempted, `predictions.geojson` is written to
 `data/<village>/predictions.geojson` — a GeoJSON `FeatureCollection` in EPSG:4326 with:
@@ -160,7 +176,29 @@ For each village attempted, `predictions.geojson` is written to
 | `method_note` | optional | Brief explanation of the shift or the flag reason |
 | `geometry` | always | New boundary if corrected, original if flagged |
 
-## 6. Running It
+## 7. How This Is Scored
+
+Submissions are ranked on four tiers, each building on the last:
+
+| Tier | In a phrase | What it takes |
+|---|---|---|
+| Bronze | It runs | Reads a village, makes an honest correct-or-flag call per plot, writes a valid file, no overclaiming |
+| Silver | It works | Corrected plots land closer to the truth than the official position did |
+| Gold | It's trustworthy | Confidence tracks reality — the fixes marked most confident really are the best ones |
+| Platinum | It generalises | One method, no hand-tuning, holds up across villages |
+
+Against the hidden, hand-checked truths, three things are measured:
+
+| Measure | What it checks |
+|---|---|
+| Accuracy | IoU and centroid distance vs. the official start; IoU ≥ 0.5 counts as a solid hit |
+| Confidence calibration ★ | AUC — whether high-confidence fixes are really the accurate ones. Watched most closely |
+| Restraint | Flagging when unsure is rewarded; moving an already-correct plot counts against you |
+
+The tiers and numbers only rank submissions — the reasoning shown in the approach above, the
+video, and the AI transcripts is what's actually being evaluated.
+
+## 8. Running It
 
 ```bash
 uv sync
@@ -177,7 +215,7 @@ uv run main.py data/<village> --radius 18 --step 3
 `--radius` is the local search radius (metres) around the village prior shift; `--step` is the
 translation grid step (metres).
 
-## 7. Self-Scoring & Limitations
+## 9. Self-Scoring & Limitations
 
 `score()` reports median IoU (predicted vs. official, vs. the example truths), median centroid
 error, the fraction of corrected plots that improved, and calibration (Spearman correlation and
@@ -198,7 +236,7 @@ Known limitations / honest caveats:
 - The same single method (no per-village hand-tuning) is applied to both villages, in line with
   the "generalises" criterion in the rubric.
 
-## 8. Repository Structure
+## 10. Repository Structure
 
 ```
 .
@@ -221,9 +259,21 @@ Known limitations / honest caveats:
 └── transcripts/            # AI chat transcripts used during this take-home
 ```
 
-## 9. AI Usage
+## 11. AI Usage & Submission Contents
 
 AI tools were used throughout this take-home — both to understand the problem (reviewing the
 assignment write-up, glossary, and scoring rubric) and to develop and refine the alignment
 method in `bhume/solution.py`. Full transcripts are included under `/transcripts`
 (see `transcripts/README.md` for any web-chat share links).
+
+The full submission consists of:
+
+| Item | Where |
+|---|---|
+| Code | This repository (`bhume/`, `main.py`, `quickstart.py`) |
+| `predictions.geojson` per village attempted | `data/<village>/predictions.geojson` |
+| AI chat transcripts | `/transcripts` (web-chat links listed in `transcripts/README.md`) |
+| 5-minute walkthrough video | Linked in the submission form (Loom / unlisted upload / Drive) |
+
+Submitted via a single GitHub repo URL + a short Google form (name, email, phone, repo URL,
+video link, résumé).
